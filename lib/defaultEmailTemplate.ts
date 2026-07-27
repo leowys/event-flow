@@ -55,6 +55,7 @@ function baseLayout(params: {
                 ${bodyHtml}
               </td>
             </tr>
+            <!-- EVENT_FLOW_EMAIL_FOOTER -->
             <tr>
               <td style="padding:0 28px 28px; text-align:center;">
                 <p style="font-size:12px; color:#a3a3a3; margin:0;">Enviado con Event Flow</p>

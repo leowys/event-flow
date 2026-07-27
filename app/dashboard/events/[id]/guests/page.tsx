@@ -602,31 +602,27 @@ export default function GuestsPage({ params }: { params: { id: string } }) {
             ))}
           </div>
 
-          <div className="hidden overflow-x-auto rounded-2xl border border-neutral-200 bg-white md:block">
-            <table className="min-w-[1220px] w-full text-sm">
+          <div className="hidden overflow-hidden rounded-xl border border-neutral-200 bg-white md:block">
+            <table className="w-full table-fixed text-sm">
               <thead className="border-b border-neutral-200 bg-neutral-50 text-left text-neutral-500">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Nombre</th>
-                  <th className="px-4 py-3 font-medium">Email</th>
-                  <th className="px-4 py-3 font-medium">Cant.</th>
-                  <th className="px-4 py-3 font-medium">RSVP</th>
-                  <th className="px-4 py-3 font-medium">Ingreso</th>
-                  <th className="px-4 py-3 font-medium">Fecha de carga</th>
-                  <th className="px-4 py-3 font-medium">Fecha de confirmación</th>
-                  <th className="px-4 py-3 font-medium">Fecha de rechazo</th>
-                  <th className="px-4 py-3 font-medium">QR</th>
-                  <th className="px-4 py-3 font-medium">Acciones</th>
+                  <th className="w-[24%] px-4 py-3 font-medium">Contacto</th>
+                  <th className="w-[12%] px-4 py-3 font-medium">RSVP</th>
+                  <th className="w-[13%] px-4 py-3 font-medium">Ingreso</th>
+                  <th className="w-[25%] px-4 py-3 font-medium">Fechas</th>
+                  <th className="w-[8%] px-4 py-3 text-center font-medium">Personas</th>
+                  <th className="w-[18%] px-4 py-3 font-medium">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((g) => (
-                  <tr key={g.id} className="border-b border-neutral-100 last:border-0">
-                    <td className="px-4 py-3 font-medium text-neutral-900">
-                      {g.nombre} {g.apellido}
-                    </td>
-                    <td className="px-4 py-3 text-neutral-500">{g.email}</td>
-                    <td className="px-4 py-3 text-neutral-500">
-                      {g.cantidadConfirmada ?? g.cantidadPersonasPermitidas}
+                  <tr key={g.id} className="border-b border-neutral-100 align-top last:border-0 hover:bg-neutral-50/70">
+                    <td className="px-4 py-4">
+                      <p className="font-medium leading-snug text-neutral-950">
+                        {g.nombre} {g.apellido}
+                      </p>
+                      <p className="mt-1 truncate text-sm text-neutral-500">{g.email}</p>
+                      {g.telefono && <p className="mt-0.5 text-xs text-neutral-400">{g.telefono}</p>}
                     </td>
                     <td className="px-4 py-3">
                       <span
@@ -645,52 +641,61 @@ export default function GuestsPage({ params }: { params: { id: string } }) {
                           Pendiente
                         </span>
                       )}
-                      {g.checkedInAt && (
-                        <p className="mt-1 text-xs text-neutral-400">{formatDate(g.checkedInAt)}</p>
-                      )}
                     </td>
-                    <td className="px-4 py-3 text-neutral-500">{formatDate(g.createdAt)}</td>
-                    <td className="px-4 py-3 text-neutral-500">
-                      {g.estadoRsvp === "CONFIRMADO" ? formatDate(g.fechaRespuesta) : "-"}
+                    <td className="px-4 py-3 text-xs text-neutral-500">
+                      <dl className="space-y-1.5">
+                        <div className="grid grid-cols-[82px_1fr] gap-2">
+                          <dt className="text-neutral-400">Carga</dt>
+                          <dd>{formatDate(g.createdAt)}</dd>
+                        </div>
+                        <div className="grid grid-cols-[82px_1fr] gap-2">
+                          <dt className="text-neutral-400">Respuesta</dt>
+                          <dd>
+                            {g.estadoRsvp === "PENDIENTE" ? "-" : formatDate(g.fechaRespuesta)}
+                          </dd>
+                        </div>
+                        <div className="grid grid-cols-[82px_1fr] gap-2">
+                          <dt className="text-neutral-400">Ingreso</dt>
+                          <dd>{formatDate(g.checkedInAt)}</dd>
+                        </div>
+                      </dl>
                     </td>
-                    <td className="px-4 py-3 text-neutral-500">
-                      {g.estadoRsvp === "RECHAZADO" ? formatDate(g.fechaRespuesta) : "-"}
+                    <td className="px-4 py-3 text-center text-neutral-600">
+                      {g.cantidadConfirmada ?? g.cantidadPersonasPermitidas}
                     </td>
                     <td className="px-4 py-3">
-                      <a
-                        className="text-xs font-medium text-neutral-600 underline"
-                        href={qrUrl(g.id)}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        Ver QR
-                      </a>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-2">
-                        <button className="text-xs font-medium text-neutral-600 underline" onClick={() => startEditGuest(g)}>
+                      <div className="flex flex-wrap gap-x-3 gap-y-2">
+                        <a
+                          className="text-xs font-medium text-blue-600 hover:text-blue-700"
+                          href={qrUrl(g.id)}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          QR
+                        </a>
+                        <button className="text-xs font-medium text-neutral-600 hover:text-neutral-900" onClick={() => startEditGuest(g)}>
                           Editar
                         </button>
+                        {g.estadoRsvp === "CONFIRMADO" && (
+                          <button
+                            className="text-xs font-medium text-neutral-600 hover:text-neutral-900 disabled:opacity-50"
+                            disabled={resendingQrId === g.id}
+                            onClick={() => resendQr(g)}
+                          >
+                            {resendingQrId === g.id ? "Enviando..." : "Reenviar QR"}
+                          </button>
+                        )}
                         {g.checkedInAt && (
                           <button
-                            className="text-xs font-medium text-neutral-600 underline"
+                            className="text-xs font-medium text-neutral-600 hover:text-neutral-900 disabled:opacity-50"
                             disabled={undoingCheckinId === g.id}
                             onClick={() => undoCheckin(g)}
                           >
                             {undoingCheckinId === g.id ? "Revirtiendo..." : "Deshacer ingreso"}
                           </button>
                         )}
-                        {g.estadoRsvp === "CONFIRMADO" && (
-                          <button
-                            className="text-xs font-medium text-neutral-600 underline"
-                            disabled={resendingQrId === g.id}
-                            onClick={() => resendQr(g)}
-                          >
-                            {resendingQrId === g.id ? "Reenviando..." : "Reenviar QR"}
-                          </button>
-                        )}
                         <button
-                          className="text-xs font-medium text-red-600 underline"
+                          className="text-xs font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
                           disabled={deletingId === g.id}
                           onClick={() => handleDeleteGuest(g)}
                         >

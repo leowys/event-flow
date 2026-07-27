@@ -129,16 +129,15 @@ Las variables `RESEND_API_KEY` / `EMAIL_FROM` del `.env` siguen funcionando como
 
 Buscá `TODO` en el código para ver los puntos que quedaron señalados para las próximas etapas (verificación de email real, parser de CSV, timezone robusto en el countdown).
 
-## Pendientes funcionales
-
-- **QR + check-in en puerta**: agregar una capa de acreditación para eventos presenciales. Alcance sugerido:
-  - generar un QR por invitado usando su `tokenUnico`;
-  - crear una vista de scanner/check-in para el organizador;
-  - agregar `checkedInAt` (y opcionalmente quién validó el ingreso) al modelo `Guest`;
-  - marcar visualmente invitados "pendientes de ingreso" / "ingresados";
-  - evitar que el QR escriba estado con un simple GET público; la validación debería requerir sesión del organizador.
-
 ## Implementado recientemente
+
+- **QR + check-in en puerta**:
+  - generación de QR por invitado usando `tokenUnico`;
+  - vista privada de scanner/check-in para el organizador;
+  - campos `checkedInAt` y `checkedInByUserId` en `Guest`;
+  - estado visual de invitados pendientes de ingreso / ingresados;
+  - endpoint seguro de check-in por sesión del organizador, sin escritura por GET público;
+  - opción para deshacer un ingreso registrado por error.
 
 - **Mejoras en gestión de invitados**:
   - columnas de fecha de carga, fecha de confirmación y fecha de rechazo;
@@ -152,10 +151,6 @@ Buscá `TODO` en el código para ver los puntos que quedaron señalados para las
   - cuántos días antes se envía;
   - si se envía una sola vez o múltiples recordatorios;
   - si requiere una cola/cron/background job para producción.
-
-## Pendientes operativos
-
-- **Crear repositorio en GitHub**: inicializar el proyecto como repo Git, definir `.gitignore` definitivo, hacer el primer commit estable y subirlo a un repositorio de GitHub para versionar cambios, abrir issues/roadmap y preparar futuras ramas de trabajo.
 
 ## Próximo paso sugerido
 

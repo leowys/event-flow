@@ -12,7 +12,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
   const session = await getSession();
   const event = await prisma.event.findUnique({
     where: { id: params.id },
-    include: { guests: { select: { estadoRsvp: true } } },
+    include: { guests: { select: { estadoRsvp: true, checkedInAt: true } } },
   });
 
   if (!event || event.userId !== session!.userId) {
@@ -22,6 +22,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
   const confirmados = event.guests.filter((g) => g.estadoRsvp === "CONFIRMADO").length;
   const rechazados = event.guests.filter((g) => g.estadoRsvp === "RECHAZADO").length;
   const pendientes = event.guests.filter((g) => g.estadoRsvp === "PENDIENTE").length;
+  const ingresados = event.guests.filter((g) => g.checkedInAt).length;
 
   const emailLogGroups = await prisma.emailLog.groupBy({
     by: ["status"],
@@ -77,10 +78,11 @@ export default async function EventDetailPage({ params }: { params: { id: string
             value={emailsEnviados}
             sub={emailsFallidos > 0 ? `${emailsFallidos} fallaron` : undefined}
           />
+          <StatCard label="Ingresados" value={ingresados} sub={`${event.guests.length} invitados`} />
         </div>
       </div>
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-2">
+      <div className="mb-6 grid gap-4 sm:grid-cols-3">
         <div className="card flex items-center justify-between">
           <div>
             <h2 className="font-medium">Invitados</h2>
@@ -91,6 +93,18 @@ export default async function EventDetailPage({ params }: { params: { id: string
           </div>
           <Link href={`/dashboard/events/${event.id}/guests`} className="btn-primary">
             Gestionar
+          </Link>
+        </div>
+
+        <div className="card flex items-center justify-between">
+          <div>
+            <h2 className="font-medium">Check-in</h2>
+            <p className="text-sm text-neutral-500">
+              {ingresados} ingreso{ingresados !== 1 && "s"} registrado{ingresados !== 1 && "s"}.
+            </p>
+          </div>
+          <Link href={`/dashboard/events/${event.id}/checkin`} className="btn-primary">
+            Abrir
           </Link>
         </div>
 

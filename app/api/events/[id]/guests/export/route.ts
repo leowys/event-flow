@@ -40,6 +40,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     "Fecha invitacion",
     "Fecha confirmacion",
     "Fecha rechazo",
+    "Fecha ingreso",
+    "Ingresado por usuario",
     "Comentarios",
   ];
 
@@ -55,6 +57,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     csvDate(guest.invitacionEnviadaEn),
     guest.estadoRsvp === "CONFIRMADO" ? csvDate(guest.fechaRespuesta) : "",
     guest.estadoRsvp === "RECHAZADO" ? csvDate(guest.fechaRespuesta) : "",
+    csvDate(guest.checkedInAt),
+    guest.checkedInByUserId,
     guest.comentarios,
   ]);
 

@@ -15,6 +15,8 @@ type Guest = {
   tokenUnico: string;
   invitacionEnviadaEn: string | null;
   fechaRespuesta: string | null;
+  checkedInAt: string | null;
+  checkedInByUserId: string | null;
   comentarios: string | null;
   createdAt: string;
   updatedAt: string;
@@ -79,6 +81,7 @@ export default function GuestsPage({ params }: { params: { id: string } }) {
   const [editError, setEditError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [undoingCheckinId, setUndoingCheckinId] = useState<string | null>(null);
 
   const [showImport, setShowImport] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
@@ -177,6 +180,25 @@ export default function GuestsPage({ params }: { params: { id: string } }) {
     loadGuests();
   }
 
+  async function undoCheckin(guest: Guest) {
+    const ok = window.confirm(`¿Deshacer el ingreso de ${guest.nombre} ${guest.apellido}?`);
+    if (!ok) return;
+
+    setUndoingCheckinId(guest.id);
+    const res = await fetch(`/api/events/${eventId}/guests/${guest.id}/checkin`, {
+      method: "DELETE",
+    });
+    setUndoingCheckinId(null);
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      window.alert(data.error ?? "No se pudo deshacer el check-in");
+      return;
+    }
+
+    loadGuests();
+  }
+
   async function handleImport(e: React.FormEvent) {
     e.preventDefault();
     setImportError(null);
@@ -221,6 +243,10 @@ export default function GuestsPage({ params }: { params: { id: string } }) {
 
   function downloadGuestsCsv() {
     window.location.href = `/api/events/${eventId}/guests/export`;
+  }
+
+  function qrUrl(guestId: string) {
+    return `/api/events/${eventId}/guests/${guestId}/qr`;
   }
 
   function renderGuestForm(
@@ -306,6 +332,9 @@ export default function GuestsPage({ params }: { params: { id: string } }) {
           <button className="btn-secondary" onClick={downloadGuestsCsv}>
             Exportar CSV
           </button>
+          <Link className="btn-secondary" href={`/dashboard/events/${eventId}/checkin`}>
+            Check-in
+          </Link>
           <button className="btn-secondary" onClick={() => setShowImport((v) => !v)}>
             {showImport ? "Cancelar" : "Importar CSV"}
           </button>
@@ -447,16 +476,18 @@ export default function GuestsPage({ params }: { params: { id: string } }) {
         </div>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-neutral-200 bg-white">
-          <table className="min-w-[1040px] w-full text-sm">
+          <table className="min-w-[1220px] w-full text-sm">
             <thead className="border-b border-neutral-200 bg-neutral-50 text-left text-neutral-500">
               <tr>
                 <th className="px-4 py-3 font-medium">Nombre</th>
                 <th className="px-4 py-3 font-medium">Email</th>
                 <th className="px-4 py-3 font-medium">Cant.</th>
                 <th className="px-4 py-3 font-medium">RSVP</th>
+                <th className="px-4 py-3 font-medium">Ingreso</th>
                 <th className="px-4 py-3 font-medium">Fecha de carga</th>
                 <th className="px-4 py-3 font-medium">Fecha de confirmación</th>
                 <th className="px-4 py-3 font-medium">Fecha de rechazo</th>
+                <th className="px-4 py-3 font-medium">QR</th>
                 <th className="px-4 py-3 font-medium">Acciones</th>
               </tr>
             </thead>
@@ -477,6 +508,20 @@ export default function GuestsPage({ params }: { params: { id: string } }) {
                       {rsvpLabel[g.estadoRsvp]}
                     </span>
                   </td>
+                  <td className="px-4 py-3">
+                    {g.checkedInAt ? (
+                      <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+                        Ingresó
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-500">
+                        Pendiente
+                      </span>
+                    )}
+                    {g.checkedInAt && (
+                      <p className="mt-1 text-xs text-neutral-400">{formatDate(g.checkedInAt)}</p>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-neutral-500">{formatDate(g.createdAt)}</td>
                   <td className="px-4 py-3 text-neutral-500">
                     {g.estadoRsvp === "CONFIRMADO" ? formatDate(g.fechaRespuesta) : "-"}
@@ -485,10 +530,29 @@ export default function GuestsPage({ params }: { params: { id: string } }) {
                     {g.estadoRsvp === "RECHAZADO" ? formatDate(g.fechaRespuesta) : "-"}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex gap-2">
+                    <a
+                      className="text-xs font-medium text-neutral-600 underline"
+                      href={qrUrl(g.id)}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Ver QR
+                    </a>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-wrap gap-2">
                       <button className="text-xs font-medium text-neutral-600 underline" onClick={() => startEditGuest(g)}>
                         Editar
                       </button>
+                      {g.checkedInAt && (
+                        <button
+                          className="text-xs font-medium text-neutral-600 underline"
+                          disabled={undoingCheckinId === g.id}
+                          onClick={() => undoCheckin(g)}
+                        >
+                          {undoingCheckinId === g.id ? "Revirtiendo..." : "Deshacer ingreso"}
+                        </button>
+                      )}
                       <button
                         className="text-xs font-medium text-red-600 underline"
                         disabled={deletingId === g.id}

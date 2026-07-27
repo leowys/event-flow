@@ -143,6 +143,8 @@ model Guest {
 
   invitacionEnviadaEn        DateTime?
   fechaRespuesta             DateTime?
+  checkedInAt                DateTime?
+  checkedInByUserId          String?
 
   createdAt                  DateTime   @default(now())
   updatedAt                  DateTime   @updatedAt
@@ -151,6 +153,7 @@ model Guest {
 
   @@index([eventId])
   @@index([tokenUnico])
+  @@index([checkedInAt])
   @@map("guests")
 }
 

@@ -6,7 +6,7 @@ import { renderTemplate } from "@/lib/emailVariables";
 import { sendEmail } from "@/lib/email";
 import { buildDefaultTemplate, DefaultTemplateKind } from "@/lib/defaultEmailTemplate";
 import { formatEventDate } from "@/lib/eventDatetime";
-import { buildLocationLabel, buildMapLink, buildStaticMapImageUrl } from "@/lib/maps";
+import { buildLocationLabel, buildMapLink, buildStaticMapImageDataUrl } from "@/lib/maps";
 
 type SendTemplateKind = Exclude<DefaultTemplateKind, "RECHAZO">;
 
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const eventDateLabel = formatEventDate(event.fecha);
   const eventLocationLabel = buildLocationLabel(event);
   const eventMapUrl = buildMapLink(event);
-  const eventMapImageUrl = eventMapUrl ? await buildStaticMapImageUrl(event) : "";
+  const eventMapImageSrc = eventMapUrl ? await buildStaticMapImageDataUrl(event) : "";
 
   const results: { guestId: string; ok: boolean; error?: string }[] = [];
 
@@ -104,7 +104,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (templateKind === "INVITACION" && eventMapUrl) {
       html = insertInvitationMapBlock(html, {
         mapUrl: eventMapUrl,
-        mapImageUrl: eventMapImageUrl,
+        mapImageSrc: eventMapImageSrc,
         accentColor: event.colorPrincipal,
       });
     }
@@ -153,12 +153,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
 function insertInvitationMapBlock(
   html: string,
-  options: { mapUrl: string; mapImageUrl: string; accentColor: string }
+  options: { mapUrl: string; mapImageSrc: string; accentColor: string }
 ) {
-  const { mapUrl, mapImageUrl, accentColor } = options;
-  const mapImage = mapImageUrl
+  const mapUrl = escapeHtmlAttribute(options.mapUrl);
+  const mapImageSrc = escapeHtmlAttribute(options.mapImageSrc);
+  const accentColor = escapeHtmlAttribute(options.accentColor);
+  const mapImage = mapImageSrc
     ? `<a href="${mapUrl}" target="_blank" style="display:block; margin:0 0 16px; text-decoration:none;">
-          <img src="${mapImageUrl}" width="520" alt="Mapa de la ubicación del evento" style="display:block; width:100%; max-width:520px; height:auto; border:0; border-radius:12px;" />
+          <img src="${mapImageSrc}" width="480" alt="Mapa de la ubicación del evento" style="display:block; width:100%; max-width:480px; height:auto; border:0; border-radius:12px;" />
         </a>`
     : "";
 
@@ -205,4 +207,12 @@ function insertInvitationMapBlock(
   }
 
   return `${html}${fallbackBlock}`;
+}
+
+function escapeHtmlAttribute(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }

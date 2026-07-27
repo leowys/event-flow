@@ -1,0 +1,195 @@
+// Event Flow — Schema de base de datos (Etapa 0/1)
+// Incorpora los ajustes señalados en el análisis de la spec:
+// - password hasheado + verificación de email
+// - slug único + timezone en Event
+// - separación envío/respuesta en Guest + cantidad_confirmada
+// - EmailLog para trazabilidad de envíos (necesario para estadísticas reales)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EventStatus {
+  BORRADOR
+  ACTIVO
+  FINALIZADO
+}
+
+enum RsvpStatus {
+  PENDIENTE
+  CONFIRMADO
+  RECHAZADO
+}
+
+enum EmailKind {
+  INVITACION
+  CONFIRMACION
+  RECORDATORIO
+}
+
+enum EmailStatus {
+  ENVIADO
+  ENTREGADO
+  REBOTADO
+  FALLIDO
+}
+
+enum EmailProvider {
+  RESEND
+  BREVO
+}
+
+model User {
+  id            String   @id @default(cuid())
+  nombre        String
+  email         String   @unique
+  passwordHash  String
+  emailVerified Boolean  @default(false)
+
+  // Token de un solo uso para el link de verificación de email, con
+  // expiración. Se regenera cada vez que se reenvía el email.
+  emailVerificationToken   String?   @unique
+  emailVerificationExpires DateTime?
+
+  createdAt     DateTime @default(now())
+
+  events Event[]
+  emailProviderSettings EmailProviderSettings?
+
+  @@map("users")
+}
+
+// Configuración del proveedor de email, cargada desde la app (no desde .env).
+// Una por usuario/organizador: cada uno puede usar su propia cuenta de
+// Resend o Brevo. La API key nunca se guarda en texto plano — se encripta
+// con AES-256-GCM antes de persistirla (ver lib/crypto.ts).
+model EmailProviderSettings {
+  id              String        @id @default(cuid())
+  userId          String        @unique
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  provider        EmailProvider
+  apiKeyEncrypted String        // ciphertext, formato "iv:authTag:data" en base64
+  fromEmail       String
+  fromName        String
+  testModeEnabled Boolean       @default(false)
+  testRecipientEmail String?
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("email_provider_settings")
+}
+
+model Event {
+  id             String      @id @default(cuid())
+  userId         String
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  nombreEvento   String
+  tipoEvento     String
+  fecha          DateTime
+  horaInicio     String // "HH:mm" — se combina con `fecha` y `timezone` para calcular la cuenta regresiva
+  horaFin        String?
+  timezone       String      @default("America/Argentina/Buenos_Aires")
+
+  imagenPortada  String?
+  logo           String?
+  colorPrincipal String      @default("#111827")
+  colorSecundario String     @default("#6366F1")
+  descripcion    String?
+
+  nombreLugar    String?
+  direccion      String?
+  mapaUrl        String?
+
+  estado         EventStatus @default(BORRADOR)
+  slugPublico    String      @unique
+
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  guests         Guest[]
+  templates      EmailTemplate[]
+  emailLogs      EmailLog[]
+
+  @@index([userId])
+  @@map("events")
+}
+
+model Guest {
+  id                         String     @id @default(cuid())
+  eventId                    String
+  event                      Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  nombre                     String
+  apellido                   String
+  email                      String
+  telefono                   String?
+
+  cantidadPersonasPermitidas Int        @default(1)
+  cantidadConfirmada         Int?
+
+  estadoRsvp                 RsvpStatus @default(PENDIENTE)
+  comentarios                String?
+
+  // Token de acceso público al RSVP. Generado con nanoid (CSPRNG), nunca secuencial.
+  tokenUnico                 String     @unique
+
+  invitacionEnviadaEn        DateTime?
+  fechaRespuesta             DateTime?
+
+  createdAt                  DateTime   @default(now())
+  updatedAt                  DateTime   @updatedAt
+
+  emailLogs                  EmailLog[]
+
+  @@index([eventId])
+  @@index([tokenUnico])
+  @@map("guests")
+}
+
+model EmailTemplate {
+  id             String    @id @default(cuid())
+  eventId        String
+  event          Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  nombre         String
+  kind           EmailKind
+  archivoOriginal String   // path/key del ZIP original en storage
+  htmlProcesado  String    @db.Text // HTML ya sanitizado, listo para interpolar variables
+  createdAt      DateTime  @default(now())
+
+  emailLogs      EmailLog[]
+
+  @@index([eventId])
+  @@map("email_templates")
+}
+
+// Registro de cada envío individual — necesario para que las estadísticas
+// (punto 8 de la spec) reflejen entregabilidad real y no solo conteos de RSVP.
+model EmailLog {
+  id          String      @id @default(cuid())
+  eventId     String
+  event       Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  guestId     String
+  guest       Guest       @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  templateId  String?
+  template    EmailTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
+  kind        EmailKind
+  status      EmailStatus @default(ENVIADO)
+  proveedorId String? // id devuelto por el proveedor de email (SendGrid/Postmark/Resend/SES)
+  error       String?
+
+  createdAt   DateTime    @default(now())
+
+  @@index([eventId])
+  @@index([guestId])
+  @@map("email_logs")
+}

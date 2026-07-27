@@ -1,0 +1,50 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: eventflow
+      POSTGRES_PASSWORD: eventflow
+      POSTGRES_DB: eventflow
+    ports:
+      - "${DB_PORT:-5432}:5432" # expuesto por si querés conectarte con un cliente externo (ej. TablePlus)
+    volumes:
+      - eventflow-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eventflow -d eventflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    build:
+      context: .
+      target: migrator
+    environment:
+      DATABASE_URL: postgresql://eventflow:eventflow@db:5432/eventflow
+    depends_on:
+      db:
+        condition: service_healthy
+    # Corre una vez, aplica el schema de prisma/schema.prisma, y termina.
+
+  app:
+    build:
+      context: .
+      target: runner
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    environment:
+      DATABASE_URL: postgresql://eventflow:eventflow@db:5432/eventflow
+      AUTH_SECRET: ${AUTH_SECRET:-cambia-este-valor-por-uno-random-largo}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-Event Flow <no-reply@example.com>}
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  eventflow-db-data:

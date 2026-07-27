@@ -1,0 +1,509 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+
+type Guest = {
+  id: string;
+  nombre: string;
+  apellido: string;
+  email: string;
+  telefono: string | null;
+  cantidadPersonasPermitidas: number;
+  cantidadConfirmada: number | null;
+  estadoRsvp: "PENDIENTE" | "CONFIRMADO" | "RECHAZADO";
+  tokenUnico: string;
+  invitacionEnviadaEn: string | null;
+  fechaRespuesta: string | null;
+  comentarios: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type GuestForm = {
+  nombre: string;
+  apellido: string;
+  email: string;
+  telefono: string;
+  cantidadPersonasPermitidas: string;
+};
+
+const emptyForm: GuestForm = {
+  nombre: "",
+  apellido: "",
+  email: "",
+  telefono: "",
+  cantidadPersonasPermitidas: "1",
+};
+
+const rsvpLabel: Record<Guest["estadoRsvp"], string> = {
+  PENDIENTE: "Pendiente",
+  CONFIRMADO: "Confirmado",
+  RECHAZADO: "Rechazado",
+};
+
+const rsvpStyle: Record<Guest["estadoRsvp"], string> = {
+  PENDIENTE: "bg-neutral-100 text-neutral-600",
+  CONFIRMADO: "bg-green-100 text-green-700",
+  RECHAZADO: "bg-red-100 text-red-600",
+};
+
+function formatDate(value: string | null | undefined) {
+  if (!value) return "-";
+  return new Intl.DateTimeFormat("es-AR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
+
+function formFromGuest(guest: Guest): GuestForm {
+  return {
+    nombre: guest.nombre,
+    apellido: guest.apellido,
+    email: guest.email,
+    telefono: guest.telefono ?? "",
+    cantidadPersonasPermitidas: String(guest.cantidadPersonasPermitidas),
+  };
+}
+
+export default function GuestsPage({ params }: { params: { id: string } }) {
+  const eventId = params.id;
+  const [guests, setGuests] = useState<Guest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState<GuestForm>(emptyForm);
+  const [editGuestId, setEditGuestId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<GuestForm>(emptyForm);
+  const [error, setError] = useState<string | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const [showImport, setShowImport] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importResult, setImportResult] = useState<{
+    creados: number;
+    duplicadosEnArchivo: number;
+    duplicadosExistentes: number;
+    filasInvalidas: number;
+    detalleErrores: { row: number; reason: string }[];
+  } | null>(null);
+
+  async function loadGuests() {
+    setLoading(true);
+    const res = await fetch(`/api/events/${eventId}/guests`);
+    const data = await res.json();
+    if (res.ok) setGuests(data.guests);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    loadGuests();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventId]);
+
+  async function handleAddGuest(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSaving(true);
+
+    const res = await fetch(`/api/events/${eventId}/guests`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    });
+    const data = await res.json();
+    setSaving(false);
+
+    if (!res.ok) {
+      setError(data.error ?? "No se pudo agregar el invitado");
+      return;
+    }
+
+    setForm(emptyForm);
+    setShowForm(false);
+    loadGuests();
+  }
+
+  function startEditGuest(guest: Guest) {
+    setEditError(null);
+    setEditGuestId(guest.id);
+    setEditForm(formFromGuest(guest));
+    setShowForm(false);
+  }
+
+  async function handleEditGuest(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editGuestId) return;
+
+    setEditError(null);
+    setSaving(true);
+    const res = await fetch(`/api/events/${eventId}/guests/${editGuestId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(editForm),
+    });
+    const data = await res.json();
+    setSaving(false);
+
+    if (!res.ok) {
+      setEditError(data.error ?? "No se pudo actualizar el invitado");
+      return;
+    }
+
+    setEditGuestId(null);
+    setEditForm(emptyForm);
+    loadGuests();
+  }
+
+  async function handleDeleteGuest(guest: Guest) {
+    const ok = window.confirm(`¿Eliminar a ${guest.nombre} ${guest.apellido}?`);
+    if (!ok) return;
+
+    setDeletingId(guest.id);
+    const res = await fetch(`/api/events/${eventId}/guests/${guest.id}`, { method: "DELETE" });
+    setDeletingId(null);
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      window.alert(data.error ?? "No se pudo eliminar el invitado");
+      return;
+    }
+
+    if (editGuestId === guest.id) setEditGuestId(null);
+    loadGuests();
+  }
+
+  async function handleImport(e: React.FormEvent) {
+    e.preventDefault();
+    setImportError(null);
+    setImportResult(null);
+
+    if (!importFile) {
+      setImportError("Elegí un archivo .csv");
+      return;
+    }
+
+    setImporting(true);
+    const formData = new FormData();
+    formData.append("file", importFile);
+
+    const res = await fetch(`/api/events/${eventId}/guests/import`, {
+      method: "POST",
+      body: formData,
+    });
+    const data = await res.json();
+    setImporting(false);
+
+    if (!res.ok) {
+      setImportError(data.error ?? "No se pudo importar el archivo");
+      return;
+    }
+
+    setImportResult(data);
+    setImportFile(null);
+    loadGuests();
+  }
+
+  function downloadTemplate() {
+    const csv = "Nombre,Apellido,Email,Telefono\nJuan,Pérez,juan.perez@ejemplo.com,+54 9 11 1234-5678\n";
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "plantilla-invitados.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function downloadGuestsCsv() {
+    window.location.href = `/api/events/${eventId}/guests/export`;
+  }
+
+  function renderGuestForm(
+    values: GuestForm,
+    setValues: React.Dispatch<React.SetStateAction<GuestForm>>
+  ) {
+    return (
+      <>
+        <div>
+          <label className="label">Nombre</label>
+          <input
+            required
+            className="input"
+            value={values.nombre}
+            onChange={(e) => setValues((f) => ({ ...f, nombre: e.target.value }))}
+          />
+        </div>
+        <div>
+          <label className="label">Apellido</label>
+          <input
+            required
+            className="input"
+            value={values.apellido}
+            onChange={(e) => setValues((f) => ({ ...f, apellido: e.target.value }))}
+          />
+        </div>
+        <div>
+          <label className="label">Email</label>
+          <input
+            type="email"
+            required
+            className="input"
+            value={values.email}
+            onChange={(e) => setValues((f) => ({ ...f, email: e.target.value }))}
+          />
+        </div>
+        <div>
+          <label className="label">Teléfono</label>
+          <input
+            className="input"
+            value={values.telefono}
+            onChange={(e) => setValues((f) => ({ ...f, telefono: e.target.value }))}
+          />
+        </div>
+        <div>
+          <label className="label">Cantidad permitida</label>
+          <input
+            type="number"
+            min={1}
+            max={20}
+            className="input"
+            value={values.cantidadPersonasPermitidas}
+            onChange={(e) =>
+              setValues((f) => ({ ...f, cantidadPersonasPermitidas: e.target.value }))
+            }
+          />
+        </div>
+      </>
+    );
+  }
+
+  const filtered = guests.filter((g) => {
+    const q = search.toLowerCase();
+    return (
+      g.nombre.toLowerCase().includes(q) ||
+      g.apellido.toLowerCase().includes(q) ||
+      g.email.toLowerCase().includes(q)
+    );
+  });
+
+  return (
+    <div>
+      <Link
+        href={`/dashboard/events/${eventId}`}
+        className="text-sm text-neutral-500 hover:text-neutral-900"
+      >
+        ← Volver al evento
+      </Link>
+
+      <div className="mb-6 mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-semibold tracking-tight">Invitados</h1>
+        <div className="flex flex-wrap gap-2">
+          <button className="btn-secondary" onClick={downloadGuestsCsv}>
+            Exportar CSV
+          </button>
+          <button className="btn-secondary" onClick={() => setShowImport((v) => !v)}>
+            {showImport ? "Cancelar" : "Importar CSV"}
+          </button>
+          <button
+            className="btn-primary"
+            onClick={() => {
+              setShowForm((v) => !v);
+              setEditGuestId(null);
+            }}
+          >
+            {showForm ? "Cancelar" : "+ Agregar invitado"}
+          </button>
+        </div>
+      </div>
+
+      {showImport && (
+        <form onSubmit={handleImport} className="card mb-6 space-y-4">
+          <div>
+            <p className="text-sm text-neutral-500">
+              El CSV necesita columnas <strong>Nombre</strong>, <strong>Apellido</strong> y{" "}
+              <strong>Email</strong> (Teléfono es opcional). El orden de las columnas no importa.
+            </p>
+            <button
+              type="button"
+              onClick={downloadTemplate}
+              className="mt-2 text-xs font-medium text-neutral-500 underline"
+            >
+              Descargar plantilla de ejemplo
+            </button>
+          </div>
+
+          <div>
+            <label className="label">Archivo .csv</label>
+            <input
+              type="file"
+              accept=".csv"
+              className="input"
+              onChange={(e) => setImportFile(e.target.files?.[0] ?? null)}
+            />
+          </div>
+
+          {importError && <p className="text-sm text-red-600">{importError}</p>}
+
+          {importResult && (
+            <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 text-sm">
+              <p className="font-medium text-green-700">
+                {importResult.creados} invitado{importResult.creados !== 1 && "s"} importado
+                {importResult.creados !== 1 && "s"}.
+              </p>
+              {(importResult.duplicadosEnArchivo > 0 ||
+                importResult.duplicadosExistentes > 0 ||
+                importResult.filasInvalidas > 0) && (
+                <ul className="mt-2 space-y-0.5 text-neutral-500">
+                  {importResult.duplicadosEnArchivo > 0 && (
+                    <li>
+                      {importResult.duplicadosEnArchivo} filas repetidas dentro del mismo archivo
+                      (se ignoraron).
+                    </li>
+                  )}
+                  {importResult.duplicadosExistentes > 0 && (
+                    <li>{importResult.duplicadosExistentes} ya existían en este evento.</li>
+                  )}
+                  {importResult.filasInvalidas > 0 && (
+                    <li>{importResult.filasInvalidas} filas con datos inválidos o incompletos.</li>
+                  )}
+                </ul>
+              )}
+              {importResult.detalleErrores.length > 0 && (
+                <details className="mt-2">
+                  <summary className="cursor-pointer text-xs text-neutral-400">Ver detalle</summary>
+                  <ul className="mt-1 space-y-0.5 text-xs text-neutral-400">
+                    {importResult.detalleErrores.map((e, i) => (
+                      <li key={i}>
+                        {e.row > 0 ? `Fila ${e.row}: ` : ""}
+                        {e.reason}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+            </div>
+          )}
+
+          <button type="submit" disabled={importing} className="btn-primary w-full">
+            {importing ? "Importando..." : "Importar"}
+          </button>
+        </form>
+      )}
+
+      {showForm && (
+        <form onSubmit={handleAddGuest} className="card mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {renderGuestForm(form, setForm)}
+          {error && <p className="sm:col-span-2 text-sm text-red-600">{error}</p>}
+          <div className="sm:col-span-2">
+            <button type="submit" disabled={saving} className="btn-primary">
+              {saving ? "Guardando..." : "Guardar invitado"}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {editGuestId && (
+        <form onSubmit={handleEditGuest} className="card mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <p className="font-medium">Editar invitado</p>
+          </div>
+          {renderGuestForm(editForm, setEditForm)}
+          {editError && <p className="sm:col-span-2 text-sm text-red-600">{editError}</p>}
+          <div className="flex gap-2 sm:col-span-2">
+            <button type="submit" disabled={saving} className="btn-primary">
+              {saving ? "Guardando..." : "Guardar cambios"}
+            </button>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => {
+                setEditGuestId(null);
+                setEditForm(emptyForm);
+              }}
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      )}
+
+      <input
+        placeholder="Buscar por nombre, apellido o email..."
+        className="input mb-4 max-w-sm"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+
+      {loading ? (
+        <p className="text-sm text-neutral-500">Cargando...</p>
+      ) : filtered.length === 0 ? (
+        <div className="card text-center text-sm text-neutral-500">
+          No hay invitados que coincidan.
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-2xl border border-neutral-200 bg-white">
+          <table className="min-w-[1040px] w-full text-sm">
+            <thead className="border-b border-neutral-200 bg-neutral-50 text-left text-neutral-500">
+              <tr>
+                <th className="px-4 py-3 font-medium">Nombre</th>
+                <th className="px-4 py-3 font-medium">Email</th>
+                <th className="px-4 py-3 font-medium">Cant.</th>
+                <th className="px-4 py-3 font-medium">RSVP</th>
+                <th className="px-4 py-3 font-medium">Fecha de carga</th>
+                <th className="px-4 py-3 font-medium">Fecha de confirmación</th>
+                <th className="px-4 py-3 font-medium">Fecha de rechazo</th>
+                <th className="px-4 py-3 font-medium">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((g) => (
+                <tr key={g.id} className="border-b border-neutral-100 last:border-0">
+                  <td className="px-4 py-3 font-medium text-neutral-900">
+                    {g.nombre} {g.apellido}
+                  </td>
+                  <td className="px-4 py-3 text-neutral-500">{g.email}</td>
+                  <td className="px-4 py-3 text-neutral-500">
+                    {g.cantidadConfirmada ?? g.cantidadPersonasPermitidas}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${rsvpStyle[g.estadoRsvp]}`}
+                    >
+                      {rsvpLabel[g.estadoRsvp]}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-neutral-500">{formatDate(g.createdAt)}</td>
+                  <td className="px-4 py-3 text-neutral-500">
+                    {g.estadoRsvp === "CONFIRMADO" ? formatDate(g.fechaRespuesta) : "-"}
+                  </td>
+                  <td className="px-4 py-3 text-neutral-500">
+                    {g.estadoRsvp === "RECHAZADO" ? formatDate(g.fechaRespuesta) : "-"}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex gap-2">
+                      <button className="text-xs font-medium text-neutral-600 underline" onClick={() => startEditGuest(g)}>
+                        Editar
+                      </button>
+                      <button
+                        className="text-xs font-medium text-red-600 underline"
+                        disabled={deletingId === g.id}
+                        onClick={() => handleDeleteGuest(g)}
+                      >
+                        {deletingId === g.id ? "Eliminando..." : "Eliminar"}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}

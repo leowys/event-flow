@@ -1,0 +1,139 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/auth";
+import { sendInvitationsSchema } from "@/lib/validation";
+import { renderTemplate } from "@/lib/emailVariables";
+import { sendEmail } from "@/lib/email";
+import { buildDefaultTemplate, DefaultTemplateKind } from "@/lib/defaultEmailTemplate";
+import { formatEventDate } from "@/lib/eventDatetime";
+
+type SendTemplateKind = Exclude<DefaultTemplateKind, "RECHAZO">;
+
+async function loadOwnedEvent(eventId: string, userId: string) {
+  const event = await prisma.event.findUnique({ where: { id: eventId } });
+  if (!event || event.userId !== userId) return null;
+  return event;
+}
+
+// El templateId puede ser el id real de una plantilla subida, o el valor
+// sintético "default:INVITACION" / "default:CONFIRMACION" / "default:RECORDATORIO"
+// que representa la plantilla básica generada automáticamente (sin subir ZIP).
+function parseDefaultTemplateId(templateId: string): SendTemplateKind | null {
+  const match = templateId.match(/^default:(INVITACION|CONFIRMACION|RECORDATORIO)$/);
+  return match ? (match[1] as SendTemplateKind) : null;
+}
+
+export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+
+  const event = await loadOwnedEvent(params.id, session.userId);
+  if (!event) return NextResponse.json({ error: "Evento no encontrado" }, { status: 404 });
+
+  const body = await req.json().catch(() => null);
+  const parsed = sendInvitationsSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message ?? "Datos inválidos" },
+      { status: 400 }
+    );
+  }
+
+  const { templateId, guestIds } = parsed.data;
+
+  const defaultKind = parseDefaultTemplateId(templateId);
+  let templateHtml: string;
+  let templateDbId: string | null;
+  let templateKind: SendTemplateKind;
+
+  if (defaultKind) {
+    templateHtml = buildDefaultTemplate(
+      {
+        nombreEvento: event.nombreEvento,
+        colorPrincipal: event.colorPrincipal,
+        colorSecundario: event.colorSecundario,
+        logo: event.logo,
+      },
+      defaultKind
+    );
+    templateDbId = null;
+    templateKind = defaultKind;
+  } else {
+    const template = await prisma.emailTemplate.findUnique({ where: { id: templateId } });
+    if (!template || template.eventId !== event.id) {
+      return NextResponse.json({ error: "Plantilla no encontrada" }, { status: 404 });
+    }
+    templateHtml = template.htmlProcesado;
+    templateDbId = template.id;
+    templateKind = template.kind as SendTemplateKind;
+  }
+
+  const guests = await prisma.guest.findMany({
+    where: { id: { in: guestIds }, eventId: event.id },
+  });
+  if (guests.length === 0) {
+    return NextResponse.json({ error: "No se encontraron invitados válidos" }, { status: 400 });
+  }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const eventDateLabel = formatEventDate(event.fecha);
+
+  const results: { guestId: string; ok: boolean; error?: string }[] = [];
+
+  // Envío secuencial: para el volumen esperado en un MVP (decenas/pocos
+  // cientos de invitados) evita saturar el rate limit del proveedor. Si el
+  // volumen crece, esto debería moverse a una cola (ej. background job).
+  for (const guest of guests) {
+    const rsvpLink = `${appUrl}/rsvp/${guest.tokenUnico}`;
+    const html = renderTemplate(templateHtml, {
+      guest_name: `${guest.nombre} ${guest.apellido}`,
+      event_name: event.nombreEvento,
+      event_date: eventDateLabel,
+      event_time: event.horaInicio,
+      event_location: event.nombreLugar ?? "",
+      rsvp_link: rsvpLink,
+      rsvp_confirm_link: `${rsvpLink}?accion=confirmar`,
+      rsvp_decline_link: `${rsvpLink}?accion=no`,
+    });
+
+    const result = await sendEmail({
+      userId: session.userId,
+      to: guest.email,
+      subject: `Invitación: ${event.nombreEvento}`,
+      html,
+    });
+
+    await prisma.emailLog.create({
+      data: {
+        eventId: event.id,
+        guestId: guest.id,
+        templateId: templateDbId,
+        kind: templateKind,
+        status: result.ok ? "ENVIADO" : "FALLIDO",
+        proveedorId: result.ok ? result.providerId : null,
+        error: result.ok ? null : result.error,
+      },
+    });
+
+    if (result.ok) {
+      await prisma.guest.update({
+        where: { id: guest.id },
+        data: { invitacionEnviadaEn: new Date() },
+      });
+    }
+
+    results.push({ guestId: guest.id, ok: result.ok, error: result.ok ? undefined : result.error });
+  }
+
+  const enviados = results.filter((r) => r.ok).length;
+  const fallidos = results.length - enviados;
+
+  if (enviados > 0 && event.estado !== "FINALIZADO") {
+    await prisma.event.update({
+      where: { id: event.id },
+      data: { estado: "ACTIVO" },
+    });
+  }
+
+  return NextResponse.json({ enviados, fallidos, results });
+}

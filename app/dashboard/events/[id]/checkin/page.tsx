@@ -177,7 +177,7 @@ export default function CheckinPage({ params }: { params: { id: string } }) {
   });
 
   return (
-    <div>
+    <div className="pb-8">
       <Link
         href={`/dashboard/events/${eventId}`}
         className="text-sm text-neutral-500 hover:text-neutral-900"
@@ -185,32 +185,35 @@ export default function CheckinPage({ params }: { params: { id: string } }) {
         ← Volver al evento
       </Link>
 
-      <div className="mb-6 mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-4 mt-2 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Check-in</h1>
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Check-in</h1>
           <p className="mt-1 text-sm text-neutral-500">Escaneo de QR y acreditación en puerta.</p>
         </div>
-        <Link href={`/dashboard/events/${eventId}/guests`} className="btn-secondary">
+        <Link href={`/dashboard/events/${eventId}/guests`} className="btn-secondary w-full sm:w-auto">
           Ver invitados
         </Link>
       </div>
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+      <div className="sticky top-0 z-10 -mx-6 mb-4 grid grid-cols-3 gap-2 border-y border-neutral-200 bg-white/95 px-6 py-3 backdrop-blur sm:static sm:mx-0 sm:mb-6 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-0">
         <StatCard label="Ingresados" value={stats.checkedIn} />
         <StatCard label="Pendientes" value={stats.pending} />
         <StatCard label="Invitados" value={stats.total} />
       </div>
 
-      <div className="mb-6 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="card">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-medium">Scanner</h2>
+      <div className="mb-6 grid gap-4 lg:grid-cols-[1.05fr_0.95fr] lg:gap-6">
+        <div className="card p-4 sm:p-6">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="font-medium">Scanner</h2>
+              <p className="mt-1 text-xs text-neutral-500 sm:hidden">Apuntá al QR del asistente.</p>
+            </div>
             {cameraRunning ? (
-              <button className="btn-secondary" onClick={stopScanner}>
+              <button className="btn-secondary min-h-12 w-full sm:min-h-0 sm:w-auto" onClick={stopScanner}>
                 Detener cámara
               </button>
             ) : (
-              <button className="btn-primary" onClick={startScanner}>
+              <button className="btn-primary min-h-12 w-full sm:min-h-0 sm:w-auto" onClick={startScanner}>
                 Iniciar cámara
               </button>
             )}
@@ -218,7 +221,7 @@ export default function CheckinPage({ params }: { params: { id: string } }) {
 
           <div
             id={scannerId}
-            className="min-h-[320px] overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50"
+            className="min-h-[260px] overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50 sm:min-h-[340px]"
           />
 
           {cameraError && <p className="mt-3 text-sm text-red-600">{cameraError}</p>}
@@ -231,39 +234,39 @@ export default function CheckinPage({ params }: { params: { id: string } }) {
             }}
           >
             <input
-              className="input"
+              className="input min-h-12"
               placeholder="Pegar código o token..."
               value={manualCode}
               onChange={(e) => setManualCode(e.target.value)}
             />
-            <button className="btn-primary sm:w-40" disabled={checking}>
+            <button className="btn-primary min-h-12 sm:w-40" disabled={checking}>
               {checking ? "Validando..." : "Registrar"}
             </button>
           </form>
         </div>
 
-        <div className="card">
-          <h2 className="mb-4 font-medium">Resultado</h2>
+        <div className="card p-4 sm:p-6">
+          <h2 className="mb-3 font-medium sm:mb-4">Resultado</h2>
           {error && (
-            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 sm:p-5">
               {error}
             </div>
           )}
           {!error && !result && (
-            <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-500">
+            <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-500 sm:p-5">
               Esperando lectura de QR.
             </div>
           )}
           {result && (
             <div
-              className={`rounded-xl border p-4 ${
+              className={`rounded-xl border p-4 sm:p-5 ${
                 result.status === "checked_in"
                   ? "border-green-200 bg-green-50 text-green-800"
                   : "border-amber-200 bg-amber-50 text-amber-800"
               }`}
             >
               <p className="text-sm font-medium">{result.message}</p>
-              <p className="mt-3 text-xl font-semibold">
+              <p className="mt-3 text-2xl font-semibold leading-tight sm:text-xl">
                 {result.guest.nombre} {result.guest.apellido}
               </p>
               <p className="mt-1 text-sm opacity-80">{result.guest.email}</p>
@@ -284,11 +287,11 @@ export default function CheckinPage({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      <div className="card">
+      <div className="card p-4 sm:p-6">
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="font-medium">Listado de acreditación</h2>
           <input
-            className="input max-w-sm"
+            className="input min-h-12 max-w-sm"
             placeholder="Buscar invitado..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -300,8 +303,40 @@ export default function CheckinPage({ params }: { params: { id: string } }) {
         ) : filteredGuests.length === 0 ? (
           <p className="text-sm text-neutral-500">No hay invitados que coincidan.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-[760px] w-full text-sm">
+          <>
+            <div className="space-y-3 md:hidden">
+              {filteredGuests.map((guest) => (
+                <div key={guest.id} className="rounded-xl border border-neutral-200 bg-white p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-medium text-neutral-900">
+                        {guest.nombre} {guest.apellido}
+                      </p>
+                      <p className="truncate text-xs text-neutral-400">{guest.email}</p>
+                    </div>
+                    <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${rsvpStyle[guest.estadoRsvp]}`}>
+                      {rsvpLabel[guest.estadoRsvp]}
+                    </span>
+                  </div>
+
+                  <div className="mt-3 rounded-lg bg-neutral-50 px-3 py-2 text-sm text-neutral-600">
+                    {guest.checkedInAt ? `Ingresó: ${formatDate(guest.checkedInAt)}` : "Ingreso pendiente"}
+                  </div>
+
+                  {guest.checkedInAt && (
+                    <button
+                      className="btn-secondary mt-3 min-h-11 w-full"
+                      onClick={() => undoCheckin(guest)}
+                    >
+                      Deshacer ingreso
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="hidden overflow-x-auto md:block">
+              <table className="min-w-[760px] w-full text-sm">
               <thead className="border-b border-neutral-200 text-left text-neutral-500">
                 <tr>
                   <th className="py-3 pr-4 font-medium">Invitado</th>
@@ -339,8 +374,9 @@ export default function CheckinPage({ params }: { params: { id: string } }) {
                   </tr>
                 ))}
               </tbody>
-            </table>
-          </div>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </div>
@@ -349,9 +385,9 @@ export default function CheckinPage({ params }: { params: { id: string } }) {
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="card">
+    <div className="rounded-xl border border-neutral-200 bg-white p-3 shadow-sm sm:rounded-2xl sm:p-6">
       <p className="text-xs font-medium text-neutral-500">{label}</p>
-      <p className="mt-1 text-2xl font-semibold">{value}</p>
+      <p className="mt-1 text-xl font-semibold sm:text-2xl">{value}</p>
     </div>
   );
 }

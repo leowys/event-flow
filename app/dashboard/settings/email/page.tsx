@@ -157,7 +157,7 @@ export default function EmailSettingsPage() {
         ← Volver
       </Link>
 
-      <h1 className="mb-1 mt-2 text-2xl font-semibold tracking-tight">Ajustes de email</h1>
+      <h1 className="page-title mb-1 mt-2">Ajustes de email</h1>
       <p className="mb-8 text-sm text-neutral-500">
         Elegí con qué plataforma se envían las invitaciones, confirmaciones y emails de
         verificación de cuenta.
@@ -178,7 +178,7 @@ export default function EmailSettingsPage() {
               </p>
             )}
           </div>
-          <button onClick={handleRemove} className="btn-secondary text-red-600">
+          <button onClick={handleRemove} className="btn-danger">
             Quitar
           </button>
         </div>
@@ -195,7 +195,7 @@ export default function EmailSettingsPage() {
                 onClick={() => setProvider(p)}
                 className={`rounded-xl border px-4 py-3 text-left text-sm font-medium transition ${
                   provider === p
-                    ? "border-neutral-900 bg-neutral-900 text-white"
+                    ? "border-blue-600 bg-blue-600 text-white shadow-sm"
                     : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"
                 }`}
               >
@@ -224,7 +224,7 @@ export default function EmailSettingsPage() {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label className="label">Nombre del remitente</label>
             <input
@@ -282,7 +282,7 @@ export default function EmailSettingsPage() {
         {saveError && <p className="text-sm text-red-600">{saveError}</p>}
         {saveSuccess && <p className="text-sm text-green-700">Configuración guardada.</p>}
 
-        <button type="submit" disabled={saving} className="btn-primary w-full">
+        <button type="submit" disabled={saving} className="btn-primary min-h-11 w-full">
           {saving ? "Guardando..." : "Guardar configuración"}
         </button>
       </form>
@@ -292,7 +292,7 @@ export default function EmailSettingsPage() {
         <p className="mb-4 text-sm text-neutral-500">
           Completá el proveedor y la API key arriba, y mandate un email de prueba a vos mismo.
         </p>
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <input
             type="email"
             className="input"
@@ -300,7 +300,7 @@ export default function EmailSettingsPage() {
             value={testTo}
             onChange={(e) => setTestTo(e.target.value)}
           />
-          <button onClick={handleTest} disabled={testing} className="btn-secondary whitespace-nowrap">
+          <button onClick={handleTest} disabled={testing} className="btn-secondary min-h-11 whitespace-nowrap">
             {testing ? "Enviando..." : "Enviar prueba"}
           </button>
         </div>

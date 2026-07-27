@@ -591,7 +591,7 @@ export default function GuestsPage({ params }: { params: { id: string } }) {
                     </button>
                   )}
                   <button
-                    className="btn-secondary min-h-11 border-red-200 text-red-600 hover:bg-red-50"
+                    className="btn-danger min-h-11"
                     disabled={deletingId === g.id}
                     onClick={() => handleDeleteGuest(g)}
                   >

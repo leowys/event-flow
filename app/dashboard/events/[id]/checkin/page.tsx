@@ -195,7 +195,7 @@ export default function CheckinPage({ params }: { params: { id: string } }) {
         </Link>
       </div>
 
-      <div className="sticky top-28 z-10 -mx-4 mb-4 grid grid-cols-3 gap-2 border-y border-neutral-200 bg-white/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 md:static md:mx-0 md:mb-6 md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-0">
+      <div className="sticky top-40 z-10 -mx-4 mb-4 grid grid-cols-3 gap-2 border-y border-neutral-200 bg-white/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 md:static md:mx-0 md:mb-6 md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-0">
         <StatCard label="Ingresados" value={stats.checkedIn} />
         <StatCard label="Pendientes" value={stats.pending} />
         <StatCard label="Invitados" value={stats.total} />

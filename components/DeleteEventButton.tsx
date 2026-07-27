@@ -24,7 +24,7 @@ export default function DeleteEventButton({ eventId }: { eventId: string }) {
   }
 
   return (
-    <button onClick={handleDelete} disabled={loading} className="btn-secondary text-red-600">
+    <button onClick={handleDelete} disabled={loading} className="btn-danger min-h-11 lg:min-h-0">
       {loading ? "Eliminando..." : "Eliminar"}
     </button>
   );

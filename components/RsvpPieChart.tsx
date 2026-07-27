@@ -1,7 +1,5 @@
 "use client";
 
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
-
 type Props = {
   confirmados: number;
   pendientes: number;
@@ -32,34 +30,18 @@ export default function RsvpPieChart({ confirmados, pendientes, rechazados }: Pr
   }
 
   return (
-    <div className="flex min-w-0 flex-col items-center gap-4 sm:flex-row sm:gap-6">
-      <div className="h-44 w-44 shrink-0 sm:h-52 sm:w-52">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={data}
-              dataKey="value"
-              nameKey="name"
-              innerRadius={55}
-              outerRadius={85}
-              paddingAngle={2}
-              strokeWidth={0}
-            >
-              {data.map((entry) => (
-                <Cell key={entry.name} fill={entry.color} />
-              ))}
-            </Pie>
-            <Tooltip
-              formatter={(value: number, name: string) => [
-                `${value} (${Math.round((value / total) * 100)}%)`,
-                name,
-              ]}
-              contentStyle={{ borderRadius: 12, border: "1px solid #e5e5e5", fontSize: 13 }}
-            />
-          </PieChart>
-        </ResponsiveContainer>
+    <div className="min-w-0">
+      <div className="mb-5 flex h-3 overflow-hidden rounded-full bg-neutral-100">
+        {data.map((entry) => (
+          <div
+            key={entry.name}
+            style={{
+              width: `${Math.max((entry.value / total) * 100, 4)}%`,
+              backgroundColor: entry.color,
+            }}
+          />
+        ))}
       </div>
-
       <div className="w-full min-w-0 space-y-2 text-sm sm:w-auto">
         {data.map((entry) => (
           <div key={entry.name} className="flex min-w-0 items-center gap-2">

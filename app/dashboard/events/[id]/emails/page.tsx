@@ -187,9 +187,12 @@ export default function EmailsPage({ params }: { params: { id: string } }) {
         ← Volver al evento
       </Link>
 
-      <div className="mb-6 mt-2 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Emails</h1>
-        <button className="btn-primary" onClick={() => setShowUpload((v) => !v)}>
+      <div className="mb-6 mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="page-title">Invitaciones</h1>
+          <p className="page-subtitle">Plantillas, envíos y recordatorios del evento.</p>
+        </div>
+        <button className="btn-primary min-h-11 sm:min-h-0" onClick={() => setShowUpload((v) => !v)}>
           {showUpload ? "Cancelar" : "+ Subir plantilla"}
         </button>
       </div>
@@ -246,7 +249,7 @@ export default function EmailsPage({ params }: { params: { id: string } }) {
 
           {uploadError && <p className="text-sm text-red-600">{uploadError}</p>}
 
-          <button type="submit" disabled={uploading} className="btn-primary w-full">
+          <button type="submit" disabled={uploading} className="btn-primary min-h-11 w-full">
             {uploading ? "Procesando..." : "Subir plantilla"}
           </button>
         </form>
@@ -256,7 +259,7 @@ export default function EmailsPage({ params }: { params: { id: string } }) {
       {loading ? (
         <p className="mb-8 text-sm text-neutral-500">Cargando...</p>
       ) : (
-        <div className="mb-8 grid gap-3 sm:grid-cols-3">
+        <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {templates.map((t) => (
             <div key={t.id} className="card">
               <p className="font-medium">{t.nombre}</p>
@@ -338,7 +341,7 @@ export default function EmailsPage({ params }: { params: { id: string } }) {
           </p>
         )}
 
-        <button className="btn-primary w-full" disabled={sending} onClick={handleSend}>
+        <button className="btn-primary min-h-11 w-full" disabled={sending} onClick={handleSend}>
           {sending ? "Enviando..." : "Enviar invitaciones"}
         </button>
       </div>
@@ -359,7 +362,7 @@ export default function EmailsPage({ params }: { params: { id: string } }) {
         )}
 
         <button
-          className="btn-secondary w-full"
+          className="btn-secondary min-h-11 w-full"
           disabled={reminding || pendingGuests.length === 0}
           onClick={handleSendReminders}
         >

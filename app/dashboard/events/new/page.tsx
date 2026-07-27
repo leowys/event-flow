@@ -48,7 +48,7 @@ export default function NewEventPage() {
 
   return (
     <div className="mx-auto max-w-xl">
-      <h1 className="mb-1 text-2xl font-semibold tracking-tight">Nuevo evento</h1>
+      <h1 className="page-title mb-1">Nuevo evento</h1>
       <p className="mb-8 text-sm text-neutral-500">
         Completá la información general. Podés editar todo después.
       </p>
@@ -75,8 +75,8 @@ export default function NewEventPage() {
           />
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
-          <div className="col-span-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="sm:col-span-2">
             <label className="label">Fecha</label>
             <input
               type="date"
@@ -140,7 +140,7 @@ export default function NewEventPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label className="label">Color principal</label>
             <input

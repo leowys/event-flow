@@ -38,24 +38,24 @@ export default async function EventDetailPage({ params }: { params: { id: string
 
   return (
     <div>
-      <div className="mb-8 flex items-start justify-between">
+      <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <Link href="/dashboard" className="text-sm text-neutral-500 hover:text-neutral-900">
             ← Volver
           </Link>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight">{event.nombreEvento}</h1>
-          <div className="mt-2 flex items-center gap-3">
+          <h1 className="page-title mt-2">{event.nombreEvento}</h1>
+          <div className="mt-2 flex flex-wrap items-center gap-3">
             <EventStatusControl eventId={event.id} initialEstado={event.estado} />
             <p className="text-sm text-neutral-500">
               {formatEventDate(event.fecha)} · {event.horaInicio}hs
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:flex">
           <a
             href={`/event/${event.slugPublico}`}
             target="_blank"
-            className="btn-secondary"
+            className="btn-secondary min-h-11"
           >
             Ver landing pública
           </a>
@@ -83,7 +83,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
       </div>
 
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
-        <div className="card flex items-center justify-between">
+        <div className="card flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="font-medium">Invitados</h2>
             <p className="text-sm text-neutral-500">
@@ -96,7 +96,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
           </Link>
         </div>
 
-        <div className="card flex items-center justify-between">
+        <div className="card flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="font-medium">Check-in</h2>
             <p className="text-sm text-neutral-500">
@@ -108,7 +108,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
           </Link>
         </div>
 
-        <div className="card flex items-center justify-between">
+        <div className="card flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="font-medium">Emails</h2>
             <p className="text-sm text-neutral-500">Plantillas e invitaciones.</p>

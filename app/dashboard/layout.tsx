@@ -20,7 +20,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <DashboardNav />
       <div className="md:pl-64">
         {user && !user.emailVerified && <VerificationBanner />}
-        <main className="mx-auto max-w-6xl px-4 pb-20 pt-32 sm:px-6 md:px-8 md:py-8">
+        <main className="mx-auto max-w-6xl px-4 pb-20 pt-40 sm:px-6 md:px-8 md:py-8">
           {children}
         </main>
       </div>

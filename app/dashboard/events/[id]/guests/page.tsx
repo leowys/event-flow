@@ -561,18 +561,19 @@ export default function GuestsPage({ params }: { params: { id: string } }) {
                 </details>
 
                 <div className="mt-3 grid grid-cols-2 gap-2">
-                  <a
-                    className="btn-secondary min-h-11"
-                    href={qrUrl(g.id)}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Ver QR
-                  </a>
                   <button className="btn-secondary min-h-11" onClick={() => startEditGuest(g)}>
-                    Editar
+                    Editar contacto
                   </button>
                   {g.estadoRsvp === "CONFIRMADO" && (
+                    <>
+                    <a
+                      className="btn-secondary min-h-11"
+                      href={qrUrl(g.id)}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Ver QR
+                    </a>
                     <button
                       className="btn-secondary min-h-11"
                       disabled={resendingQrId === g.id}
@@ -580,6 +581,7 @@ export default function GuestsPage({ params }: { params: { id: string } }) {
                     >
                       {resendingQrId === g.id ? "Reenviando..." : "Reenviar QR"}
                     </button>
+                    </>
                   )}
                   {g.checkedInAt && (
                     <button
@@ -606,12 +608,12 @@ export default function GuestsPage({ params }: { params: { id: string } }) {
             <table className="w-full table-fixed text-sm">
               <thead className="border-b border-neutral-200 bg-neutral-50 text-left text-neutral-500">
                 <tr>
-                  <th className="w-[24%] px-4 py-3 font-medium">Contacto</th>
+                  <th className="w-[23%] px-4 py-3 font-medium">Contacto</th>
                   <th className="w-[12%] px-4 py-3 font-medium">RSVP</th>
                   <th className="w-[13%] px-4 py-3 font-medium">Ingreso</th>
                   <th className="w-[25%] px-4 py-3 font-medium">Fechas</th>
                   <th className="w-[8%] px-4 py-3 text-center font-medium">Personas</th>
-                  <th className="w-[18%] px-4 py-3 font-medium">Acciones</th>
+                  <th className="w-[19%] px-4 py-3 font-medium">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -664,30 +666,35 @@ export default function GuestsPage({ params }: { params: { id: string } }) {
                       {g.cantidadConfirmada ?? g.cantidadPersonasPermitidas}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-x-3 gap-y-2">
-                        <a
-                          className="text-xs font-medium text-blue-600 hover:text-blue-700"
-                          href={qrUrl(g.id)}
-                          target="_blank"
-                          rel="noreferrer"
+                      <div className="flex flex-col items-start gap-1.5">
+                        <button
+                          className="rounded-md px-2 py-1 text-left text-xs font-medium text-neutral-700 hover:bg-neutral-100 hover:text-neutral-950"
+                          onClick={() => startEditGuest(g)}
                         >
-                          QR
-                        </a>
-                        <button className="text-xs font-medium text-neutral-600 hover:text-neutral-900" onClick={() => startEditGuest(g)}>
-                          Editar
+                          Editar contacto
                         </button>
                         {g.estadoRsvp === "CONFIRMADO" && (
+                          <>
+                          <a
+                            className="rounded-md px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                            href={qrUrl(g.id)}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            Ver QR
+                          </a>
                           <button
-                            className="text-xs font-medium text-neutral-600 hover:text-neutral-900 disabled:opacity-50"
+                            className="rounded-md px-2 py-1 text-left text-xs font-medium text-blue-600 hover:bg-blue-50 hover:text-blue-700 disabled:opacity-50"
                             disabled={resendingQrId === g.id}
                             onClick={() => resendQr(g)}
                           >
                             {resendingQrId === g.id ? "Enviando..." : "Reenviar QR"}
                           </button>
+                          </>
                         )}
                         {g.checkedInAt && (
                           <button
-                            className="text-xs font-medium text-neutral-600 hover:text-neutral-900 disabled:opacity-50"
+                            className="rounded-md px-2 py-1 text-left text-xs font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 disabled:opacity-50"
                             disabled={undoingCheckinId === g.id}
                             onClick={() => undoCheckin(g)}
                           >
@@ -695,7 +702,7 @@ export default function GuestsPage({ params }: { params: { id: string } }) {
                           </button>
                         )}
                         <button
-                          className="text-xs font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
+                          className="rounded-md px-2 py-1 text-left text-xs font-medium text-red-600 hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
                           disabled={deletingId === g.id}
                           onClick={() => handleDeleteGuest(g)}
                         >

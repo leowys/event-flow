@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import DeleteEventButton from "@/components/DeleteEventButton";
 import EventBrandingForm from "@/components/EventBrandingForm";
+import EventDetailsForm from "@/components/EventDetailsForm";
 import RsvpPieChart from "@/components/RsvpPieChart";
 import EventStatusControl from "@/components/EventStatusControl";
 import { formatEventDate } from "@/lib/eventDatetime";
@@ -117,6 +118,23 @@ export default async function EventDetailPage({ params }: { params: { id: string
             Gestionar
           </Link>
         </div>
+      </div>
+
+      <div className="mb-6">
+        <EventDetailsForm
+          eventId={event.id}
+          initial={{
+            nombreEvento: event.nombreEvento,
+            tipoEvento: event.tipoEvento,
+            fecha: event.fecha.toISOString(),
+            horaInicio: event.horaInicio,
+            horaFin: event.horaFin,
+            nombreLugar: event.nombreLugar,
+            direccion: event.direccion,
+            mapaUrl: event.mapaUrl,
+            descripcion: event.descripcion,
+          }}
+        />
       </div>
 
       <div className="mb-6">

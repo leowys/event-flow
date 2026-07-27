@@ -2,7 +2,11 @@
 
 import { useRouter } from "next/navigation";
 
-export default function LogoutButton() {
+export default function LogoutButton({
+  className = "text-sm text-neutral-500 hover:text-neutral-900",
+}: {
+  className?: string;
+}) {
   const router = useRouter();
 
   async function handleLogout() {
@@ -12,7 +16,7 @@ export default function LogoutButton() {
   }
 
   return (
-    <button onClick={handleLogout} className="text-sm text-neutral-500 hover:text-neutral-900">
+    <button onClick={handleLogout} className={className}>
       Cerrar sesión
     </button>
   );

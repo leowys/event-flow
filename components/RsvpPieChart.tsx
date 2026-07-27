@@ -32,8 +32,8 @@ export default function RsvpPieChart({ confirmados, pendientes, rechazados }: Pr
   }
 
   return (
-    <div className="flex items-center gap-6">
-      <div className="h-52 w-52 shrink-0">
+    <div className="flex min-w-0 flex-col items-center gap-4 sm:flex-row sm:gap-6">
+      <div className="h-44 w-44 shrink-0 sm:h-52 sm:w-52">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -60,14 +60,14 @@ export default function RsvpPieChart({ confirmados, pendientes, rechazados }: Pr
         </ResponsiveContainer>
       </div>
 
-      <div className="space-y-2 text-sm">
+      <div className="w-full min-w-0 space-y-2 text-sm sm:w-auto">
         {data.map((entry) => (
-          <div key={entry.name} className="flex items-center gap-2">
+          <div key={entry.name} className="flex min-w-0 items-center gap-2">
             <span
               className="h-2.5 w-2.5 rounded-full"
               style={{ backgroundColor: entry.color }}
             />
-            <span className="text-neutral-600">{entry.name}</span>
+            <span className="min-w-0 flex-1 text-neutral-600">{entry.name}</span>
             <span className="font-medium text-neutral-900">{entry.value}</span>
             <span className="text-neutral-400">
               ({Math.round((entry.value / total) * 100)}%)

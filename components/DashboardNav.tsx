@@ -15,7 +15,7 @@ function itemClass(active: boolean) {
   return [
     "flex min-h-10 w-full items-center rounded-lg px-3 text-sm font-medium transition",
     active
-      ? "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-100"
+      ? "bg-[var(--brand-soft)] text-[#6f783f] ring-1 ring-inset ring-[var(--brand-ring)]"
       : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-950",
   ].join(" ");
 }
@@ -23,7 +23,7 @@ function itemClass(active: boolean) {
 function mobileItemClass(active: boolean) {
   return [
     "inline-flex min-h-10 shrink-0 items-center rounded-lg px-3 text-sm font-medium transition",
-    active ? "bg-blue-600 text-white shadow-sm" : "bg-white text-neutral-600 ring-1 ring-inset ring-neutral-200",
+    active ? "bg-[var(--brand)] text-white shadow-sm" : "bg-white text-neutral-600 ring-1 ring-inset ring-neutral-200",
   ].join(" ");
 }
 
@@ -106,11 +106,8 @@ export default function DashboardNav() {
   return (
     <>
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-neutral-200 bg-white px-4 py-5 md:flex md:flex-col">
-        <Link href="/dashboard" className="mb-8 flex items-center gap-2 px-2 text-lg font-semibold tracking-tight text-neutral-950">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold text-white">
-            EF
-          </span>
-          <span>Event Flow</span>
+        <Link href="/dashboard" className="mb-8 flex items-center px-2">
+          <img src="/logo_event_flow.svg" alt="Event Flow" className="h-8 w-auto" />
         </Link>
 
         <nav className="space-y-1">
@@ -146,11 +143,8 @@ export default function DashboardNav() {
 
       <header className="fixed inset-x-0 top-0 z-30 border-b border-neutral-200 bg-white/95 backdrop-blur md:hidden">
         <div className="flex h-14 items-center justify-between px-4">
-          <Link href="/dashboard" className="flex items-center gap-2 font-semibold tracking-tight text-neutral-950">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-xs font-bold text-white">
-              EF
-            </span>
-            <span>Event Flow</span>
+          <Link href="/dashboard" className="flex items-center">
+            <img src="/logo_event_flow.svg" alt="Event Flow" className="h-8 w-auto max-w-[160px]" />
           </Link>
           <LogoutButton />
         </div>

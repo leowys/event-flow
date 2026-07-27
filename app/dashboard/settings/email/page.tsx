@@ -195,7 +195,7 @@ export default function EmailSettingsPage() {
                 onClick={() => setProvider(p)}
                 className={`rounded-xl border px-4 py-3 text-left text-sm font-medium transition ${
                   provider === p
-                    ? "border-blue-600 bg-blue-600 text-white shadow-sm"
+                    ? "border-[var(--brand)] bg-[var(--brand)] text-white shadow-sm"
                     : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"
                 }`}
               >

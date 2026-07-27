@@ -265,7 +265,7 @@ export default function EmailsPage({ params }: { params: { id: string } }) {
               <p className="font-medium">{t.nombre}</p>
               <span
                 className={`mt-1 inline-block rounded-full px-2.5 py-0.5 text-xs ${
-                  t.isDefault ? "bg-blue-50 text-blue-600" : "bg-neutral-100 text-neutral-600"
+                  t.isDefault ? "bg-[var(--brand-soft)] text-[#6f783f]" : "bg-neutral-100 text-neutral-600"
                 }`}
               >
                 {t.isDefault ? "Básica (automática)" : kindLabel[t.kind]}

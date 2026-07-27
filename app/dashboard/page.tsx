@@ -95,7 +95,7 @@ export default async function DashboardPage() {
               <Link
                 key={event.id}
                 href={`/dashboard/events/${event.id}`}
-                className="block rounded-xl border border-neutral-200 bg-white p-4 shadow-sm transition hover:border-blue-200 hover:bg-blue-50/30"
+                className="block rounded-xl border border-neutral-200 bg-white p-4 shadow-sm transition hover:border-[var(--brand-ring)] hover:bg-[var(--brand-soft)]"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">

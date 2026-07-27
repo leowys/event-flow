@@ -5,6 +5,7 @@ import { renderTemplate } from "@/lib/emailVariables";
 import { sendEmail } from "@/lib/email";
 import { buildDefaultTemplate } from "@/lib/defaultEmailTemplate";
 import { formatEventDate } from "@/lib/eventDatetime";
+import { buildLocationLabel, buildMapLink } from "@/lib/maps";
 
 async function loadOwnedEvent(eventId: string, userId: string) {
   const event = await prisma.event.findUnique({ where: { id: eventId } });
@@ -50,6 +51,8 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const eventDateLabel = formatEventDate(event.fecha);
+  const eventLocationLabel = buildLocationLabel(event);
+  const eventMapUrl = buildMapLink(event);
   const results: { guestId: string; ok: boolean; error?: string }[] = [];
 
   for (const guest of pendingGuests) {
@@ -59,7 +62,8 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
       event_name: event.nombreEvento,
       event_date: eventDateLabel,
       event_time: event.horaInicio,
-      event_location: event.nombreLugar ?? "",
+      event_location: eventLocationLabel,
+      event_map_url: eventMapUrl,
       rsvp_link: rsvpLink,
       rsvp_confirm_link: `${rsvpLink}?accion=confirmar`,
       rsvp_decline_link: `${rsvpLink}?accion=no`,

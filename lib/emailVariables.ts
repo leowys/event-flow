@@ -6,6 +6,7 @@ export type TemplateVariables = {
   event_date: string;
   event_time: string;
   event_location: string;
+  event_map_url: string;
   rsvp_link: string;
   rsvp_confirm_link: string;
   rsvp_decline_link: string;
@@ -25,7 +26,12 @@ function escapeHtml(value: string) {
     .replace(/'/g, "&#39;");
 }
 
-const URL_VARIABLES = new Set(["rsvp_link", "rsvp_confirm_link", "rsvp_decline_link"]);
+const URL_VARIABLES = new Set([
+  "event_map_url",
+  "rsvp_link",
+  "rsvp_confirm_link",
+  "rsvp_decline_link",
+]);
 
 export function renderTemplate(html: string, variables: TemplateVariables): string {
   let output = html;

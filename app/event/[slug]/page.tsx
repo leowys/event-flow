@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Countdown from "@/components/Countdown";
 import { getEventStartIso, formatEventDate } from "@/lib/eventDatetime";
+import { buildMapEmbedUrl, buildMapLink } from "@/lib/maps";
 
 export default async function PublicEventPage({ params }: { params: { slug: string } }) {
   const event = await prisma.event.findUnique({ where: { slugPublico: params.slug } });
@@ -9,6 +10,8 @@ export default async function PublicEventPage({ params }: { params: { slug: stri
   if (!event) notFound();
 
   const targetIso = getEventStartIso(event);
+  const mapEmbedUrl = buildMapEmbedUrl(event);
+  const mapLink = buildMapLink(event);
 
   return (
     <main>
@@ -42,17 +45,39 @@ export default async function PublicEventPage({ params }: { params: { slug: stri
           <p className="mb-8 text-center text-neutral-600">{event.descripcion}</p>
         )}
 
-        {event.nombreLugar && (
-          <div className="card mb-8 text-center">
-            <h2 className="font-medium">{event.nombreLugar}</h2>
-            {event.direccion && <p className="mt-1 text-sm text-neutral-500">{event.direccion}</p>}
-            {event.mapaUrl && (
+        {(event.nombreLugar || event.direccion || mapLink) && (
+          <div className="card mb-8 overflow-hidden p-0 text-center">
+            <div className="p-6">
+              {event.nombreLugar && <h2 className="font-medium">{event.nombreLugar}</h2>}
+              {event.direccion && <p className="mt-1 text-sm text-neutral-500">{event.direccion}</p>}
+              {mapLink && (
+                <a
+                  href={mapLink}
+                  target="_blank"
+                  className="btn-secondary mt-4"
+                  rel="noreferrer"
+                >
+                  Ver mapa
+                </a>
+              )}
+            </div>
+            {mapEmbedUrl && (
+              <iframe
+                title={`Mapa de ${event.nombreLugar ?? event.nombreEvento}`}
+                src={mapEmbedUrl}
+                className="h-72 w-full border-0"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            )}
+            {!mapEmbedUrl && mapLink && (
               <a
-                href={event.mapaUrl}
+                href={mapLink}
                 target="_blank"
-                className="mt-3 inline-block text-sm font-medium underline"
+                className="block border-t border-neutral-200 bg-neutral-50 px-4 py-6 text-sm font-medium text-neutral-600 underline"
+                rel="noreferrer"
               >
-                Ver en el mapa
+                Abrir ubicación en el mapa
               </a>
             )}
           </div>

@@ -5,6 +5,7 @@ import { sendEmail } from "@/lib/email";
 import { buildDefaultTemplate } from "@/lib/defaultEmailTemplate";
 import { formatEventDate } from "@/lib/eventDatetime";
 import { buildCheckinCode } from "@/lib/checkin";
+import { buildLocationLabel, buildMapLink } from "@/lib/maps";
 
 export async function sendRsvpReceiptEmail(
   eventId: string,
@@ -44,7 +45,8 @@ export async function sendRsvpReceiptEmail(
     event_name: event.nombreEvento,
     event_date: formatEventDate(event.fecha),
     event_time: event.horaInicio,
-    event_location: event.nombreLugar ?? "",
+    event_location: buildLocationLabel(event),
+    event_map_url: buildMapLink(event),
     rsvp_link: rsvpLink,
     rsvp_confirm_link: `${rsvpLink}?accion=confirmar`,
     rsvp_decline_link: `${rsvpLink}?accion=no`,

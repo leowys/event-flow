@@ -6,6 +6,7 @@ import { renderTemplate } from "@/lib/emailVariables";
 import { sendEmail } from "@/lib/email";
 import { buildDefaultTemplate, DefaultTemplateKind } from "@/lib/defaultEmailTemplate";
 import { formatEventDate } from "@/lib/eventDatetime";
+import { buildLocationLabel, buildMapLink } from "@/lib/maps";
 
 type SendTemplateKind = Exclude<DefaultTemplateKind, "RECHAZO">;
 
@@ -77,6 +78,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const eventDateLabel = formatEventDate(event.fecha);
+  const eventLocationLabel = buildLocationLabel(event);
+  const eventMapUrl = buildMapLink(event);
 
   const results: { guestId: string; ok: boolean; error?: string }[] = [];
 
@@ -85,16 +88,21 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   // volumen crece, esto debería moverse a una cola (ej. background job).
   for (const guest of guests) {
     const rsvpLink = `${appUrl}/rsvp/${guest.tokenUnico}`;
-    const html = renderTemplate(templateHtml, {
+    let html = renderTemplate(templateHtml, {
       guest_name: `${guest.nombre} ${guest.apellido}`,
       event_name: event.nombreEvento,
       event_date: eventDateLabel,
       event_time: event.horaInicio,
-      event_location: event.nombreLugar ?? "",
+      event_location: eventLocationLabel,
+      event_map_url: eventMapUrl,
       rsvp_link: rsvpLink,
       rsvp_confirm_link: `${rsvpLink}?accion=confirmar`,
       rsvp_decline_link: `${rsvpLink}?accion=no`,
     });
+
+    if (templateKind === "INVITACION" && eventMapUrl && !templateHtml.includes("event_map_url")) {
+      html = insertInvitationMapButton(html, eventMapUrl, event.colorPrincipal);
+    }
 
     const result = await sendEmail({
       userId: session.userId,
@@ -136,4 +144,48 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 
   return NextResponse.json({ enviados, fallidos, results });
+}
+
+function insertInvitationMapButton(html: string, mapUrl: string, accentColor: string) {
+  const mapSection = `
+            <tr>
+              <td style="padding:0 28px 24px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td align="center" style="padding:18px; border:1px solid #e5e5e5; border-radius:14px; background-color:#fafafa;">
+                      <p style="font-size:14px; line-height:1.5; color:#525252; margin:0 0 14px;">
+                        Ubicación del evento
+                      </p>
+                      <a href="${mapUrl}" target="_blank" style="display:inline-block; background-color:${accentColor}; color:#ffffff; text-decoration:none; font-weight:600; font-size:14px; padding:12px 20px; border-radius:10px;">
+                        Ver mapa
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>`;
+
+  const fallbackBlock = `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0 0;">
+      <tr>
+        <td align="center" style="padding:18px; border:1px solid #e5e5e5; border-radius:14px; background-color:#fafafa;">
+          <p style="font-size:14px; line-height:1.5; color:#525252; margin:0 0 14px;">
+            Ubicación del evento
+          </p>
+          <a href="${mapUrl}" target="_blank" style="display:inline-block; background-color:${accentColor}; color:#ffffff; text-decoration:none; font-weight:600; font-size:14px; padding:12px 20px; border-radius:10px;">
+            Ver mapa
+          </a>
+        </td>
+      </tr>
+    </table>`;
+
+  if (html.includes("<!-- EVENT_FLOW_EMAIL_FOOTER -->")) {
+    return html.replace("<!-- EVENT_FLOW_EMAIL_FOOTER -->", `${mapSection}<!-- EVENT_FLOW_EMAIL_FOOTER -->`);
+  }
+
+  if (html.includes("</body>")) {
+    return html.replace("</body>", `${fallbackBlock}</body>`);
+  }
+
+  return `${html}${fallbackBlock}`;
 }

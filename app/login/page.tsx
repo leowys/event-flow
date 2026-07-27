@@ -36,8 +36,11 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center px-6">
       <div className="card w-full max-w-sm">
-        <h1 className="mb-1 text-xl font-semibold">Iniciar sesión</h1>
-        <p className="mb-6 text-sm text-neutral-500">Entrá a tu cuenta de Event Flow.</p>
+        <div className="mb-7 flex flex-col items-center text-center">
+          <img src="/logo_event_flow.svg" alt="Event Flow" className="mb-5 h-16 w-auto" />
+          <h1 className="mb-1 text-xl font-semibold">Iniciar sesión</h1>
+          <p className="text-sm text-neutral-500">Entrá a tu cuenta de Event Flow.</p>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

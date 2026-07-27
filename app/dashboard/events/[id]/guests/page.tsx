@@ -347,18 +347,18 @@ export default function GuestsPage({ params }: { params: { id: string } }) {
 
       <div className="mb-6 mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Invitados</h1>
-        <div className="flex flex-wrap gap-2">
-          <button className="btn-secondary" onClick={downloadGuestsCsv}>
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+          <button className="btn-secondary min-h-11" onClick={downloadGuestsCsv}>
             Exportar CSV
           </button>
-          <Link className="btn-secondary" href={`/dashboard/events/${eventId}/checkin`}>
+          <Link className="btn-secondary min-h-11" href={`/dashboard/events/${eventId}/checkin`}>
             Check-in
           </Link>
-          <button className="btn-secondary" onClick={() => setShowImport((v) => !v)}>
+          <button className="btn-secondary min-h-11" onClick={() => setShowImport((v) => !v)}>
             {showImport ? "Cancelar" : "Importar CSV"}
           </button>
           <button
-            className="btn-primary"
+            className="btn-primary min-h-11"
             onClick={() => {
               setShowForm((v) => !v);
               setEditGuestId(null);
@@ -482,7 +482,7 @@ export default function GuestsPage({ params }: { params: { id: string } }) {
 
       <input
         placeholder="Buscar por nombre, apellido o email..."
-        className="input mb-4 max-w-sm"
+        className="input mb-4 min-h-12 max-w-sm"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
@@ -500,107 +500,210 @@ export default function GuestsPage({ params }: { params: { id: string } }) {
           No hay invitados que coincidan.
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-neutral-200 bg-white">
-          <table className="min-w-[1220px] w-full text-sm">
-            <thead className="border-b border-neutral-200 bg-neutral-50 text-left text-neutral-500">
-              <tr>
-                <th className="px-4 py-3 font-medium">Nombre</th>
-                <th className="px-4 py-3 font-medium">Email</th>
-                <th className="px-4 py-3 font-medium">Cant.</th>
-                <th className="px-4 py-3 font-medium">RSVP</th>
-                <th className="px-4 py-3 font-medium">Ingreso</th>
-                <th className="px-4 py-3 font-medium">Fecha de carga</th>
-                <th className="px-4 py-3 font-medium">Fecha de confirmación</th>
-                <th className="px-4 py-3 font-medium">Fecha de rechazo</th>
-                <th className="px-4 py-3 font-medium">QR</th>
-                <th className="px-4 py-3 font-medium">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((g) => (
-                <tr key={g.id} className="border-b border-neutral-100 last:border-0">
-                  <td className="px-4 py-3 font-medium text-neutral-900">
-                    {g.nombre} {g.apellido}
-                  </td>
-                  <td className="px-4 py-3 text-neutral-500">{g.email}</td>
-                  <td className="px-4 py-3 text-neutral-500">
-                    {g.cantidadConfirmada ?? g.cantidadPersonasPermitidas}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${rsvpStyle[g.estadoRsvp]}`}
-                    >
-                      {rsvpLabel[g.estadoRsvp]}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    {g.checkedInAt ? (
-                      <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700">
-                        Ingresó
-                      </span>
-                    ) : (
-                      <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-500">
-                        Pendiente
-                      </span>
-                    )}
-                    {g.checkedInAt && (
-                      <p className="mt-1 text-xs text-neutral-400">{formatDate(g.checkedInAt)}</p>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-neutral-500">{formatDate(g.createdAt)}</td>
-                  <td className="px-4 py-3 text-neutral-500">
-                    {g.estadoRsvp === "CONFIRMADO" ? formatDate(g.fechaRespuesta) : "-"}
-                  </td>
-                  <td className="px-4 py-3 text-neutral-500">
-                    {g.estadoRsvp === "RECHAZADO" ? formatDate(g.fechaRespuesta) : "-"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <a
-                      className="text-xs font-medium text-neutral-600 underline"
-                      href={qrUrl(g.id)}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Ver QR
-                    </a>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-2">
-                      <button className="text-xs font-medium text-neutral-600 underline" onClick={() => startEditGuest(g)}>
-                        Editar
-                      </button>
-                      {g.checkedInAt && (
-                        <button
-                          className="text-xs font-medium text-neutral-600 underline"
-                          disabled={undoingCheckinId === g.id}
-                          onClick={() => undoCheckin(g)}
-                        >
-                          {undoingCheckinId === g.id ? "Revirtiendo..." : "Deshacer ingreso"}
-                        </button>
-                      )}
-                      {g.estadoRsvp === "CONFIRMADO" && (
-                        <button
-                          className="text-xs font-medium text-neutral-600 underline"
-                          disabled={resendingQrId === g.id}
-                          onClick={() => resendQr(g)}
-                        >
-                          {resendingQrId === g.id ? "Reenviando..." : "Reenviar QR"}
-                        </button>
-                      )}
-                      <button
-                        className="text-xs font-medium text-red-600 underline"
-                        disabled={deletingId === g.id}
-                        onClick={() => handleDeleteGuest(g)}
-                      >
-                        {deletingId === g.id ? "Eliminando..." : "Eliminar"}
-                      </button>
+        <>
+          <div className="space-y-3 md:hidden">
+            {filtered.map((g) => (
+              <article key={g.id} className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h2 className="font-medium text-neutral-900">
+                      {g.nombre} {g.apellido}
+                    </h2>
+                    <p className="truncate text-xs text-neutral-400">{g.email}</p>
+                    {g.telefono && <p className="mt-0.5 text-xs text-neutral-400">{g.telefono}</p>}
+                  </div>
+                  <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${rsvpStyle[g.estadoRsvp]}`}>
+                    {rsvpLabel[g.estadoRsvp]}
+                  </span>
+                </div>
+
+                <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                  <div className="rounded-xl bg-neutral-50 px-3 py-2">
+                    <p className="text-xs text-neutral-400">Personas</p>
+                    <p className="font-medium text-neutral-700">
+                      {g.cantidadConfirmada ?? g.cantidadPersonasPermitidas}
+                    </p>
+                  </div>
+                  <div className="rounded-xl bg-neutral-50 px-3 py-2">
+                    <p className="text-xs text-neutral-400">Ingreso</p>
+                    <p className="font-medium text-neutral-700">
+                      {g.checkedInAt ? "Ingresó" : "Pendiente"}
+                    </p>
+                  </div>
+                </div>
+
+                <details className="mt-3 rounded-xl bg-neutral-50 px-3 py-2 text-sm text-neutral-600">
+                  <summary className="cursor-pointer text-xs font-medium text-neutral-500">
+                    Ver fechas
+                  </summary>
+                  <dl className="mt-2 space-y-1 text-xs">
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-neutral-400">Carga</dt>
+                      <dd className="text-right">{formatDate(g.createdAt)}</dd>
                     </div>
-                  </td>
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-neutral-400">Confirmación</dt>
+                      <dd className="text-right">
+                        {g.estadoRsvp === "CONFIRMADO" ? formatDate(g.fechaRespuesta) : "-"}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-neutral-400">Rechazo</dt>
+                      <dd className="text-right">
+                        {g.estadoRsvp === "RECHAZADO" ? formatDate(g.fechaRespuesta) : "-"}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-neutral-400">Ingreso</dt>
+                      <dd className="text-right">{formatDate(g.checkedInAt)}</dd>
+                    </div>
+                  </dl>
+                </details>
+
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <a
+                    className="btn-secondary min-h-11"
+                    href={qrUrl(g.id)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Ver QR
+                  </a>
+                  <button className="btn-secondary min-h-11" onClick={() => startEditGuest(g)}>
+                    Editar
+                  </button>
+                  {g.estadoRsvp === "CONFIRMADO" && (
+                    <button
+                      className="btn-secondary min-h-11"
+                      disabled={resendingQrId === g.id}
+                      onClick={() => resendQr(g)}
+                    >
+                      {resendingQrId === g.id ? "Reenviando..." : "Reenviar QR"}
+                    </button>
+                  )}
+                  {g.checkedInAt && (
+                    <button
+                      className="btn-secondary min-h-11"
+                      disabled={undoingCheckinId === g.id}
+                      onClick={() => undoCheckin(g)}
+                    >
+                      {undoingCheckinId === g.id ? "Revirtiendo..." : "Deshacer ingreso"}
+                    </button>
+                  )}
+                  <button
+                    className="btn-secondary min-h-11 border-red-200 text-red-600 hover:bg-red-50"
+                    disabled={deletingId === g.id}
+                    onClick={() => handleDeleteGuest(g)}
+                  >
+                    {deletingId === g.id ? "Eliminando..." : "Eliminar"}
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <div className="hidden overflow-x-auto rounded-2xl border border-neutral-200 bg-white md:block">
+            <table className="min-w-[1220px] w-full text-sm">
+              <thead className="border-b border-neutral-200 bg-neutral-50 text-left text-neutral-500">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Nombre</th>
+                  <th className="px-4 py-3 font-medium">Email</th>
+                  <th className="px-4 py-3 font-medium">Cant.</th>
+                  <th className="px-4 py-3 font-medium">RSVP</th>
+                  <th className="px-4 py-3 font-medium">Ingreso</th>
+                  <th className="px-4 py-3 font-medium">Fecha de carga</th>
+                  <th className="px-4 py-3 font-medium">Fecha de confirmación</th>
+                  <th className="px-4 py-3 font-medium">Fecha de rechazo</th>
+                  <th className="px-4 py-3 font-medium">QR</th>
+                  <th className="px-4 py-3 font-medium">Acciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {filtered.map((g) => (
+                  <tr key={g.id} className="border-b border-neutral-100 last:border-0">
+                    <td className="px-4 py-3 font-medium text-neutral-900">
+                      {g.nombre} {g.apellido}
+                    </td>
+                    <td className="px-4 py-3 text-neutral-500">{g.email}</td>
+                    <td className="px-4 py-3 text-neutral-500">
+                      {g.cantidadConfirmada ?? g.cantidadPersonasPermitidas}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${rsvpStyle[g.estadoRsvp]}`}
+                      >
+                        {rsvpLabel[g.estadoRsvp]}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {g.checkedInAt ? (
+                        <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+                          Ingresó
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-500">
+                          Pendiente
+                        </span>
+                      )}
+                      {g.checkedInAt && (
+                        <p className="mt-1 text-xs text-neutral-400">{formatDate(g.checkedInAt)}</p>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-neutral-500">{formatDate(g.createdAt)}</td>
+                    <td className="px-4 py-3 text-neutral-500">
+                      {g.estadoRsvp === "CONFIRMADO" ? formatDate(g.fechaRespuesta) : "-"}
+                    </td>
+                    <td className="px-4 py-3 text-neutral-500">
+                      {g.estadoRsvp === "RECHAZADO" ? formatDate(g.fechaRespuesta) : "-"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <a
+                        className="text-xs font-medium text-neutral-600 underline"
+                        href={qrUrl(g.id)}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Ver QR
+                      </a>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-2">
+                        <button className="text-xs font-medium text-neutral-600 underline" onClick={() => startEditGuest(g)}>
+                          Editar
+                        </button>
+                        {g.checkedInAt && (
+                          <button
+                            className="text-xs font-medium text-neutral-600 underline"
+                            disabled={undoingCheckinId === g.id}
+                            onClick={() => undoCheckin(g)}
+                          >
+                            {undoingCheckinId === g.id ? "Revirtiendo..." : "Deshacer ingreso"}
+                          </button>
+                        )}
+                        {g.estadoRsvp === "CONFIRMADO" && (
+                          <button
+                            className="text-xs font-medium text-neutral-600 underline"
+                            disabled={resendingQrId === g.id}
+                            onClick={() => resendQr(g)}
+                          >
+                            {resendingQrId === g.id ? "Reenviando..." : "Reenviar QR"}
+                          </button>
+                        )}
+                        <button
+                          className="text-xs font-medium text-red-600 underline"
+                          disabled={deletingId === g.id}
+                          onClick={() => handleDeleteGuest(g)}
+                        >
+                          {deletingId === g.id ? "Eliminando..." : "Eliminar"}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   );

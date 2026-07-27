@@ -82,6 +82,8 @@ export default function GuestsPage({ params }: { params: { id: string } }) {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [undoingCheckinId, setUndoingCheckinId] = useState<string | null>(null);
+  const [resendingQrId, setResendingQrId] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const [showImport, setShowImport] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
@@ -197,6 +199,23 @@ export default function GuestsPage({ params }: { params: { id: string } }) {
     }
 
     loadGuests();
+  }
+
+  async function resendQr(guest: Guest) {
+    setActionMessage(null);
+    setResendingQrId(guest.id);
+    const res = await fetch(`/api/events/${eventId}/guests/${guest.id}/resend-qr`, {
+      method: "POST",
+    });
+    setResendingQrId(null);
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      window.alert(data.error ?? "No se pudo reenviar el QR");
+      return;
+    }
+
+    setActionMessage(`QR reenviado a ${guest.email}`);
   }
 
   async function handleImport(e: React.FormEvent) {
@@ -468,6 +487,12 @@ export default function GuestsPage({ params }: { params: { id: string } }) {
         onChange={(e) => setSearch(e.target.value)}
       />
 
+      {actionMessage && (
+        <p className="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+          {actionMessage}
+        </p>
+      )}
+
       {loading ? (
         <p className="text-sm text-neutral-500">Cargando...</p>
       ) : filtered.length === 0 ? (
@@ -551,6 +576,15 @@ export default function GuestsPage({ params }: { params: { id: string } }) {
                           onClick={() => undoCheckin(g)}
                         >
                           {undoingCheckinId === g.id ? "Revirtiendo..." : "Deshacer ingreso"}
+                        </button>
+                      )}
+                      {g.estadoRsvp === "CONFIRMADO" && (
+                        <button
+                          className="text-xs font-medium text-neutral-600 underline"
+                          disabled={resendingQrId === g.id}
+                          onClick={() => resendQr(g)}
+                        >
+                          {resendingQrId === g.id ? "Reenviando..." : "Reenviar QR"}
                         </button>
                       )}
                       <button

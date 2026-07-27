@@ -6,7 +6,7 @@ import { renderTemplate } from "@/lib/emailVariables";
 import { sendEmail } from "@/lib/email";
 import { buildDefaultTemplate, DefaultTemplateKind } from "@/lib/defaultEmailTemplate";
 import { formatEventDate } from "@/lib/eventDatetime";
-import { buildLocationLabel, buildMapLink } from "@/lib/maps";
+import { buildLocationLabel, buildMapLink, buildStaticMapImageUrl } from "@/lib/maps";
 
 type SendTemplateKind = Exclude<DefaultTemplateKind, "RECHAZO">;
 
@@ -80,6 +80,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const eventDateLabel = formatEventDate(event.fecha);
   const eventLocationLabel = buildLocationLabel(event);
   const eventMapUrl = buildMapLink(event);
+  const eventMapImageUrl = eventMapUrl ? await buildStaticMapImageUrl(event) : "";
 
   const results: { guestId: string; ok: boolean; error?: string }[] = [];
 
@@ -100,8 +101,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       rsvp_decline_link: `${rsvpLink}?accion=no`,
     });
 
-    if (templateKind === "INVITACION" && eventMapUrl && !templateHtml.includes("event_map_url")) {
-      html = insertInvitationMapButton(html, eventMapUrl, event.colorPrincipal);
+    if (templateKind === "INVITACION" && eventMapUrl) {
+      html = insertInvitationMapBlock(html, {
+        mapUrl: eventMapUrl,
+        mapImageUrl: eventMapImageUrl,
+        accentColor: event.colorPrincipal,
+      });
     }
 
     const result = await sendEmail({
@@ -146,13 +151,24 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   return NextResponse.json({ enviados, fallidos, results });
 }
 
-function insertInvitationMapButton(html: string, mapUrl: string, accentColor: string) {
+function insertInvitationMapBlock(
+  html: string,
+  options: { mapUrl: string; mapImageUrl: string; accentColor: string }
+) {
+  const { mapUrl, mapImageUrl, accentColor } = options;
+  const mapImage = mapImageUrl
+    ? `<a href="${mapUrl}" target="_blank" style="display:block; margin:0 0 16px; text-decoration:none;">
+          <img src="${mapImageUrl}" width="520" alt="Mapa de la ubicación del evento" style="display:block; width:100%; max-width:520px; height:auto; border:0; border-radius:12px;" />
+        </a>`
+    : "";
+
   const mapSection = `
             <tr>
               <td style="padding:0 28px 24px;">
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                   <tr>
                     <td align="center" style="padding:18px; border:1px solid #e5e5e5; border-radius:14px; background-color:#fafafa;">
+                      ${mapImage}
                       <p style="font-size:14px; line-height:1.5; color:#525252; margin:0 0 14px;">
                         Ubicación del evento
                       </p>
@@ -169,6 +185,7 @@ function insertInvitationMapButton(html: string, mapUrl: string, accentColor: st
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0 0;">
       <tr>
         <td align="center" style="padding:18px; border:1px solid #e5e5e5; border-radius:14px; background-color:#fafafa;">
+          ${mapImage}
           <p style="font-size:14px; line-height:1.5; color:#525252; margin:0 0 14px;">
             Ubicación del evento
           </p>
